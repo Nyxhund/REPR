@@ -37,6 +37,7 @@ class Application {
       'uMaterial.albedo': vec3.create(),
       'uModel.LS_to_WS': mat4.create(),
       'uCamera.WS_to_CS': mat4.create(),
+      'uCamera.position': vec3.create(),
     };
 
     // Set GUI default values
@@ -108,6 +109,8 @@ class Application {
     const aspect = this._context.gl.drawingBufferWidth / this._context.gl.drawingBufferHeight;
     let WS_to_CS = this._uniforms['uCamera.WS_to_CS'] as mat4;
     mat4.multiply(WS_to_CS, this._camera.computeProjection(aspect), this._camera.computeView());
+
+    this._uniforms['uCamera.position'] = this._camera._position;
 
     // Draw the 5x5 grid of spheres
     const rows = 5;
