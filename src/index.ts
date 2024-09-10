@@ -3,6 +3,7 @@ import { mat4, vec3 } from 'gl-matrix';
 import { Camera } from './camera';
 import { SphereGeometry } from './geometries/sphere';
 import { GLContext } from './gl';
+import { PointLight } from './lights/lights';
 import { PBRShader } from './shader/pbr-shader';
 import { Texture, Texture2D } from './textures/texture';
 import { UniformType } from './types';
@@ -10,6 +11,7 @@ import { UniformType } from './types';
 // GUI elements
 interface GUIProperties {
   albedo: number[];
+  lightIntensity: number;
 }
 
 /**
@@ -25,7 +27,7 @@ class Application {
   private _textureExample: Texture2D<HTMLElement> | null;
   private _camera: Camera;
   private _guiProperties: GUIProperties; // Object updated with the properties from the GUI
-
+  private _lights : [PointLight, PointLight, PointLight];
 
   constructor(canvas: HTMLCanvasElement) {
     this._context = new GLContext(canvas);
@@ -33,6 +35,7 @@ class Application {
     this._geometry = new SphereGeometry();
     this._shader = new PBRShader();
     this._textureExample = null;
+    this._lights = [new PointLight, new PointLight, new PointLight];
     this._uniforms = {
       'uMaterial.albedo': vec3.create(),
       'uModel.LS_to_WS': mat4.create(),
@@ -43,12 +46,23 @@ class Application {
     // Set GUI default values
     this._guiProperties = {
       albedo: [255, 255, 255],
+      lightIntensity: 0.5,
     };
     // Creates a GUI floating on the upper right side of the page.
     // You are free to do whatever you want with this GUI.
     // It's useful to have parameters you can dynamically change to see what happens.
     const gui = new GUI();
     gui.addColor(this._guiProperties, 'albedo');
+    gui.add(this._guiProperties, 'lightIntensity');
+
+    this._lights[0].setPosition(3, 0, 0);
+    this._lights[0].setColorRGB(0, 1, 0);
+
+    this._lights[1].setPosition(-3, 0, 5);
+    this._lights[1].setColorRGB(0, 0, 1);
+
+    this._lights[2].setPosition(1, 0, 17);
+    this._lights[2].setColorRGB(1, 0, 0);
   }
 
   /**
@@ -105,12 +119,23 @@ class Application {
       props.albedo[1] / 255,
       props.albedo[2] / 255);
 
+    this._lights[0].setIntensity(props.lightIntensity);
+
     // Set World-Space to Clip-Space transformation matrix (a.k.a view-projection).
     const aspect = this._context.gl.drawingBufferWidth / this._context.gl.drawingBufferHeight;
     let WS_to_CS = this._uniforms['uCamera.WS_to_CS'] as mat4;
     mat4.multiply(WS_to_CS, this._camera.computeProjection(aspect), this._camera.computeView());
 
+    // Set Camera position
     this._uniforms['uCamera.position'] = this._camera._position;
+
+    // Set Lights
+    for (const [index, light] of this._lights.entries())
+    {
+        this._uniforms['uLights[' + index + '].color'] = light.color;
+        this._uniforms['uLights[' + index + '].intensity'] = light.intensity;
+        this._uniforms['uLights[' + index + '].positionWS'] = light.positionWS;
+    }
 
     // Draw the 5x5 grid of spheres
     const rows = 5;
