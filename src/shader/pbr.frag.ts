@@ -44,11 +44,12 @@ void main()
         accu += (uLights[i].intensity * uLights[i].color * abs(dot(uLights[i].positionWS, vNormalWS)));
     }
 
-    accu.x = clamp(accu.x, 0.0, 1.0);
-    accu.y = clamp(accu.y, 0.0, 1.0);
-    accu.z = clamp(accu.z, 0.0, 1.0);
+    // accu.x = clamp(accu.x, 0.0, 1.0);
+    // accu.y = clamp(accu.y, 0.0, 1.0);
+    // accu.z = clamp(accu.z, 0.0, 1.0);
 
     albedo = albedo + accu;
+    albedo = albedo / (albedo + vec3(1));
 
     // **DO NOT** forget to apply gamma correction as last step.
     outFragColor.rgba = LinearTosRGB(vec4(albedo, 1.0));
