@@ -5,6 +5,7 @@ precision highp float;
 out vec4 outFragColor;
 in vec3 vNormalWS;
 in vec3 vViewDirectionWS;
+in vec3 positionWS;
 
 // Uniforms
 struct Material
@@ -31,6 +32,14 @@ vec4 LinearTosRGB( in vec4 value ) {
     return vec4( mix( pow( value.rgb, vec3( 0.41666 ) ) * 1.055 - vec3( 0.055 ), value.rgb * 12.92, vec3( lessThanEqual( value.rgb, vec3( 0.0031308 ) ) ) ), value.a );
 }
 
+float pi = 3.1415;
+
+float calculatePointLight(float intensity, vec3 normal, vec3 toLight)
+{
+    float len = length(toLight);
+    return intensity * max(dot(normal, normalize(toLight)), 0.0) / (4.0 * pi * len * len);
+}
+
 void main()
 {
     // **DO NOT** forget to do all your computation in linear space.
@@ -39,16 +48,12 @@ void main()
     // vec3 albedo = sRGBToLinear(vec4(vViewDirectionWS, 1.0)).rgb;
 
     vec3 accu = vec3(0.0);
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 2; i++)
     {
-        accu += (uLights[i].intensity * uLights[i].color * abs(dot(uLights[i].positionWS, vNormalWS)));
+        accu += albedo * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
     }
 
-    // accu.x = clamp(accu.x, 0.0, 1.0);
-    // accu.y = clamp(accu.y, 0.0, 1.0);
-    // accu.z = clamp(accu.z, 0.0, 1.0);
-
-    albedo = albedo + accu;
+    albedo = accu;
     albedo = albedo / (albedo + vec3(1));
 
     // **DO NOT** forget to apply gamma correction as last step.

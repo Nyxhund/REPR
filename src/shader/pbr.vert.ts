@@ -12,6 +12,7 @@ in vec3 in_normal;
 // Varyings (vertex shader outputs)
 out vec3 vNormalWS;
 out vec3 vViewDirectionWS;
+out vec3 positionWS;
 #ifdef USE_UV
   out vec2 vUv;
 #endif
@@ -40,5 +41,7 @@ void main()
   vec3 positionWorld = (uModel.LS_to_WS * positionLocal).xyz;
   vec3 tmp = normalize(uCamera.position - positionWorld);
   vViewDirectionWS = (tmp + 1.0) / 2.0;
+
+  positionWS = (uModel.LS_to_WS * positionLocal).xyz;
 }
 `;

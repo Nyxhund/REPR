@@ -11,6 +11,9 @@ import { UniformType } from './types';
 // GUI elements
 interface GUIProperties {
   albedo: number[];
+  lightColor1: number[];
+  lightColor2: number[];
+  lightColor3: number[];
   lightIntensity: number;
 }
 
@@ -46,6 +49,9 @@ class Application {
     // Set GUI default values
     this._guiProperties = {
       albedo: [255, 255, 255],
+      lightColor1: [255, 255, 255],
+      lightColor2: [255, 255, 255],
+      lightColor3: [255, 255, 255],
       lightIntensity: 0.5,
     };
     // Creates a GUI floating on the upper right side of the page.
@@ -54,15 +60,15 @@ class Application {
     const gui = new GUI();
     gui.addColor(this._guiProperties, 'albedo');
     gui.add(this._guiProperties, 'lightIntensity');
+    gui.addColor(this._guiProperties, 'lightColor1');
+    gui.addColor(this._guiProperties, 'lightColor2');
+    gui.addColor(this._guiProperties, 'lightColor3');
 
-    this._lights[0].setPosition(3, 0, 0);
-    this._lights[0].setColorRGB(0, 1, 0);
+    this._lights[0].setPosition(8, 0, 9);
 
     this._lights[1].setPosition(-3, 0, 5);
-    this._lights[1].setColorRGB(0, 0, 1);
 
     this._lights[2].setPosition(1, 0, 17);
-    this._lights[2].setColorRGB(1, 0, 0);
   }
 
   /**
@@ -120,6 +126,12 @@ class Application {
       props.albedo[2] / 255);
 
     this._lights[0].setIntensity(props.lightIntensity);
+    this._lights[1].setIntensity(props.lightIntensity);
+    this._lights[2].setIntensity(props.lightIntensity);
+
+    this._lights[0].setColorRGB(props.lightColor1[0], props.lightColor1[1], props.lightColor1[2]);
+    this._lights[1].setColorRGB(props.lightColor2[0], props.lightColor2[1], props.lightColor2[2]);
+    this._lights[2].setColorRGB(props.lightColor3[0], props.lightColor3[1], props.lightColor3[2]);
 
     // Set World-Space to Clip-Space transformation matrix (a.k.a view-projection).
     const aspect = this._context.gl.drawingBufferWidth / this._context.gl.drawingBufferHeight;
