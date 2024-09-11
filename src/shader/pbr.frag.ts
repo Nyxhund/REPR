@@ -40,6 +40,16 @@ float calculatePointLight(float intensity, vec3 normal, vec3 toLight)
     return intensity * max(dot(normal, normalize(toLight)), 0.0) / (4.0 * pi * len * len);
 }
 
+vec3 ACESFilm(vec3 x)
+{
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
+}
+
 void main()
 {
     // **DO NOT** forget to do all your computation in linear space.
@@ -54,7 +64,8 @@ void main()
     }
 
     albedo = accu;
-    albedo = albedo / (albedo + vec3(1));
+    // albedo = albedo / (albedo + vec3(1));
+    albedo = ACESFilm(albedo);
 
     // **DO NOT** forget to apply gamma correction as last step.
     outFragColor.rgba = LinearTosRGB(vec4(albedo, 1.0));
