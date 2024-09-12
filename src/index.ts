@@ -44,6 +44,7 @@ class Application {
       'uModel.LS_to_WS': mat4.create(),
       'uCamera.WS_to_CS': mat4.create(),
       'uCamera.position': vec3.create(),
+      'uCameraFrag.position': vec3.create(),
     };
 
     // Set GUI default values
@@ -140,6 +141,7 @@ class Application {
 
     // Set Camera position
     this._uniforms['uCamera.position'] = this._camera._position;
+    this._uniforms['uCameraFrag.position'] = this._camera._position;
 
     // Set Lights
     for (const [index, light] of this._lights.entries())
