@@ -82,6 +82,7 @@ float geometric(vec3 vue, vec3 light, float roughness)
 }
 
 float roughness = 0.5;
+float f0 = 0.04;
 float metallic = 0.0;
 
 vec3 specularBRDF(vec3 p, vec3 w0, vec3 wi)
@@ -91,6 +92,11 @@ vec3 specularBRDF(vec3 p, vec3 w0, vec3 wi)
     return vec3((normalDistribution(halfway, roughness) * geometric(w0, wi, roughness)) / (4.0 * dot(w0, vNormalWS) * dot(wi, vNormalWS)));
 }
 
+float fresnelShlick(vec3 vue, vec3 halfway, float f0)
+{
+    return f0 + (1.0 - f0) * pow(1.0 - dot(vue, halfway), 5.0);
+}
+
 void main()
 {
     // **DO NOT** forget to do all your computation in linear space.
@@ -98,17 +104,24 @@ void main()
     // vec3 albedo = sRGBToLinear(vec4(vNormalWS, 1.0)).rgb;
     // vec3 albedo = sRGBToLinear(vec4(vViewDirectionWS, 1.0)).rgb;
 
-    float ks = 0.5;
     vec3 accu = vec3(0.0);
     for (int i = 0; i < 2; i++)
     {
         // accu += diffuseBRDF(albedo) * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
 
-        vec3 spec = ks * specularBRDF(albedo, uLights[i].positionWS - positionWS, uCameraFrag.position - positionWS);
+        vec3 vue = uCameraFrag.position - positionWS;
+        vec3 wi = uLights[i].positionWS - positionWS;
+        vec3 halfway = vue + wi;
+        halfway = normalize(halfway);
+
+        float ks = 0.5; //fresnelShlick(vue, halfway, f0);
+        vec3 spec = ks * specularBRDF(albedo, vue, wi);
         spec = normalize(spec);
+
         vec3 diffuse = (1.0 - ks) * diffuseBRDF(albedo);
         diffuse = normalize(diffuse);
         diffuse *= (1.0 - metallic);
+
         accu += (spec + diffuse) * albedo * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
     }
 
