@@ -10,15 +10,17 @@ import { UniformType } from './types';
 
 // GUI elements
 interface GUIProperties {
-  albedo: number[];
-  lightColor1: number[];
-  lightIntensity1: number;
-  lightColor2: number[];
-  lightIntensity2: number;
-  lightColor3: number[];
-  lightIntensity3: number;
-  lightColor4: number[];
-  lightIntensity4: number;
+    BRDF: boolean;
+    IBL: boolean;
+    albedo: number[];
+    lightColor1: number[];
+    lightIntensity1: number;
+    lightColor2: number[];
+    lightIntensity2: number;
+    lightColor3: number[];
+    lightIntensity3: number;
+    lightColor4: number[];
+    lightIntensity4: number;
 }
 
 /**
@@ -49,10 +51,14 @@ class Application {
       'uCamera.WS_to_CS': mat4.create(),
       'uCamera.position': vec3.create(),
       'uCameraFrag.position': vec3.create(),
+      'uMode.mode': 0,
     };
 
     // Set GUI default values
+
     this._guiProperties = {
+      BRDF: true,
+      IBL: false,
       albedo: [255, 255, 255],
       lightColor1: [255, 255, 255],
       lightIntensity1: 0.5,
@@ -63,27 +69,36 @@ class Application {
       lightColor4: [255, 255, 255],
       lightIntensity4: 0.5,
     };
+    let setChecked = (prop : string) => {
+        this._guiProperties['BRDF'] = false;
+        this._guiProperties['IBL'] = false;
+        this._guiProperties[prop] = true;
+    }
+
     // Creates a GUI floating on the upper right side of the page.
     // You are free to do whatever you want with this GUI.
     // It's useful to have parameters you can dynamically change to see what happens.
     const gui = new GUI();
+    gui.add(this._guiProperties, 'BRDF').listen().onChange(() => setChecked('BRDF'));
+    gui.add(this._guiProperties, 'IBL').listen().onChange(() => setChecked('IBL'));
+
     gui.addColor(this._guiProperties, 'albedo');
 
     const folder1 = gui.addFolder("Light 1");
-    folder1.addColor(this._guiProperties, 'lightColor1');
-    folder1.add(this._guiProperties, 'lightIntensity1');
+    folder1.addColor(this._guiProperties, 'lightColor1').name("Color");
+    folder1.add(this._guiProperties, 'lightIntensity1').name("Intensity");
 
     const folder2 = gui.addFolder("Light 2");
-    folder2.addColor(this._guiProperties, 'lightColor2');
-    folder2.add(this._guiProperties, 'lightIntensity2');
+    folder2.addColor(this._guiProperties, 'lightColor2').name("Color");
+    folder2.add(this._guiProperties, 'lightIntensity2').name("Intensity");
 
     const folder3 = gui.addFolder("Light 3");
-    folder3.addColor(this._guiProperties, 'lightColor3');
-    folder3.add(this._guiProperties, 'lightIntensity3');
+    folder3.addColor(this._guiProperties, 'lightColor3').name("Color");
+    folder3.add(this._guiProperties, 'lightIntensity3').name("Intensity");
 
     const folder4 = gui.addFolder("Light 4");
-    folder4.addColor(this._guiProperties, 'lightColor4');
-    folder4.add(this._guiProperties, 'lightIntensity4');
+    folder4.addColor(this._guiProperties, 'lightColor4').name("Color");
+    folder4.add(this._guiProperties, 'lightIntensity4').name("Intensity");
 
     this._lights[0].setPosition(8, 0, 9);
 
@@ -175,6 +190,9 @@ class Application {
         this._uniforms['uLights[' + index + '].intensity'] = light.intensity;
         this._uniforms['uLights[' + index + '].positionWS'] = light.positionWS;
     }
+
+    // Set Mode
+    this._uniforms['uMode.mode'] = props.IBL ? 1 : 0;
 
     // Draw the 5x5 grid of spheres
     const rows = 5;

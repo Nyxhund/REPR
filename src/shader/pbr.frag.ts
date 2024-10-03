@@ -32,6 +32,12 @@ struct Lights
 };
 uniform Lights uLights[3];
 
+struct Mode
+{
+    int mode;
+};
+uniform Mode uMode;
+
 // From three.js
 vec4 sRGBToLinear( in vec4 value ) {
     return vec4( mix( pow( value.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), value.rgb * 0.0773993808, vec3( lessThanEqual( value.rgb, vec3( 0.04045 ) ) ) ), value.a );
@@ -119,35 +125,35 @@ vec4 diffuseIBL(vec3 normal)
     return texture(uTexture, polar);
 }
 
-void main()
+vec3 BRDF(vec3 albedo)
 {
-    // **DO NOT** forget to do all your computation in linear space.
-    vec3 albedo = sRGBToLinear(vec4(uMaterial.albedo, 1.0)).rgb;
-    // vec3 albedo = sRGBToLinear(vec4(vNormalWS, 1.0)).rgb;
-    // vec3 albedo = sRGBToLinear(vec4(vViewDirectionWS, 1.0)).rgb;
-
     // VERSION BRDF
-    // vec3 accu = vec3(0.0);
-    // for (int i = 0; i < 1; i++)
-    // {
-    //     // accu += diffuseBRDF(albedo) * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
-    //
-    //     vec3 vue = uCameraFrag.position - positionWS;
-    //     vec3 wi = uLights[i].positionWS - positionWS;
-    //     vec3 halfway = vue + wi;
-    //     halfway = normalize(halfway);
-    //
-    //     float ks = 0.5; // fresnelShlick(vue, halfway, f0);
-    //     vec3 spec = ks * specularBRDF(albedo, vue, wi);
-    //     spec = normalize(spec);
-    //
-    //     vec3 diffuse = (1.0 - ks) * diffuseBRDF(albedo);
-    //     diffuse = normalize(diffuse);
-    //     diffuse *= (1.0 - metallic) * albedo;
-    //
-    //     accu += (spec + diffuse) * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
-    // }
+    vec3 accu = vec3(0.0);
+    for (int i = 0; i < 1; i++)
+    {
+        // accu += diffuseBRDF(albedo) * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
 
+        vec3 vue = uCameraFrag.position - positionWS;
+        vec3 wi = uLights[i].positionWS - positionWS;
+        vec3 halfway = vue + wi;
+        halfway = normalize(halfway);
+
+        float ks = 0.5; // fresnelShlick(vue, halfway, f0);
+        vec3 spec = ks * specularBRDF(albedo, vue, wi);
+        spec = normalize(spec);
+
+        vec3 diffuse = (1.0 - ks) * diffuseBRDF(albedo);
+        diffuse = normalize(diffuse);
+        diffuse *= (1.0 - metallic) * albedo;
+
+        accu += (spec + diffuse) * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
+    }
+
+    return accu;
+}
+
+vec3 IBL(vec3 albedo)
+{
     vec3 vue = uCameraFrag.position - positionWS;
     vue = normalize(vue);
 
@@ -155,7 +161,21 @@ void main()
     vec3 kd = (1.0 - ks) * (1.0 - uMaterial.metalness);
     vec3 accu = kd * albedo * diffuseIBL(vNormalWS).rgb;
 
-    albedo = accu;
+    return accu;
+}
+
+void main()
+{
+    // **DO NOT** forget to do all your computation in linear space.
+    vec3 albedo = sRGBToLinear(vec4(uMaterial.albedo, 1.0)).rgb;
+    // vec3 albedo = sRGBToLinear(vec4(vNormalWS, 1.0)).rgb;
+    // vec3 albedo = sRGBToLinear(vec4(vViewDirectionWS, 1.0)).rgb;
+
+    if (uMode.mode == 0)
+        albedo = BRDF(albedo);
+    else
+        albedo = IBL(albedo);
+
     // albedo = albedo / (albedo + vec3(1));
     albedo = ACESFilm(albedo);
 
