@@ -16,7 +16,9 @@ struct Material
 };
 uniform Material uMaterial;
 
-uniform sampler2D uTexture;
+uniform sampler2D uTextureDiffuse;
+uniform sampler2D uTextureSpecular;
+uniform sampler2D uTexturePreIntBRDF;
 
 struct CameraFrag
 {
@@ -122,7 +124,7 @@ vec4 diffuseIBL(vec3 normal)
     vec2 polar = cartesianToPolar(normal);
     polar.x = (polar.x + pi) / (2.0 * pi);
     polar.y = (polar.y + pi / 2.0) / pi;
-    return texture(uTexture, polar);
+    return texture(uTextureDiffuse, polar);
 }
 
 vec3 BRDF(vec3 albedo)
@@ -152,16 +154,47 @@ vec3 BRDF(vec3 albedo)
     return accu;
 }
 
+vec2 getLevel(float x, vec2 polar)
+{
+    vec2 levelX = polar;
+    levelX.x = (levelX.x + pi) / (pi * pow(2.0, 2.0 + x)) + (1.0 - 1.0 / pow(2.0, x));
+    levelX.y = (levelX.y + pi / 2.0) / (pi * pow(2.0, x));
+
+    return levelX;
+}
+
+vec4 computeTexelFromRoughness(float roughness, vec3 reflected)
+{
+    vec2 polar = cartesianToPolar(reflected);
+    vec2 first = getLevel(floor(roughness * 6.0), polar);
+    vec2 second = getLevel(ceil(roughness * 6.0), polar);
+
+    vec4 texel1 = texture(uTextureSpecular, first);
+    vec4 texel2 = texture(uTextureSpecular, second);
+
+    return mix(texel1, texel2, roughness * 6.0 - floor(roughness * 6.0));
+}
+
 vec3 IBL(vec3 albedo)
 {
     vec3 vue = uCameraFrag.position - positionWS;
     vue = normalize(vue);
 
+    // Diffuse
     vec3 ks = fresnelShlick(vue, vNormalWS, vec3(uMaterial.metalness));
     vec3 kd = (1.0 - ks) * (1.0 - uMaterial.metalness);
-    vec3 accu = kd * albedo * diffuseIBL(vNormalWS).rgb;
+    vec3 diffuseBRDFEval  = kd * albedo * diffuseIBL(vNormalWS).rgb;
 
-    return accu;
+    // Specular
+    vec3 reflected = reflect(vNormalWS, vue);
+
+    vec4 prefilteredSpec = computeTexelFromRoughness(uMaterial.roughness, reflected);
+
+    // vec4 brdf = texture(uTexturePreIntBRDF, vec2(uMaterial.roughness, dot(normalize(vNormalWS), vue)));
+    // brdf = sRGBToLinear(brdf);
+    vec3 specularBRDFEval = prefilteredSpec.rgb; // * (ks * brdf.r * brdf.g);
+
+    return specularBRDFEval; // + diffuse
 }
 
 void main()

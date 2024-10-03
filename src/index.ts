@@ -57,8 +57,8 @@ class Application {
     // Set GUI default values
 
     this._guiProperties = {
-      BRDF: true,
-      IBL: false,
+      BRDF: false,
+      IBL: true,
       albedo: [255, 255, 255],
       lightColor1: [255, 255, 255],
       lightIntensity1: 0.5,
@@ -124,7 +124,27 @@ class Application {
       this._context.uploadTexture(this._textureExample);
       // You can then use it directly as a uniform:
       // ```uniforms.myTexture = this._textureExample;```
-      this._uniforms['uTexture'] = this._textureExample;
+      this._uniforms['uTextureDiffuse'] = this._textureExample;
+    }
+
+    this._textureExample = await Texture2D.load(
+      'assets/env/Alexs_Apt_2k-specular-RGBM.png'
+    );
+    if (this._textureExample !== null) {
+      this._context.uploadTexture(this._textureExample);
+      // You can then use it directly as a uniform:
+      // ```uniforms.myTexture = this._textureExample;```
+      this._uniforms['uTextureSpecular'] = this._textureExample;
+    }
+
+    this._textureExample = await Texture2D.load(
+      'assets/ggx-brdf-integrated.png'
+    );
+    if (this._textureExample !== null) {
+      this._context.uploadTexture(this._textureExample);
+      // You can then use it directly as a uniform:
+      // ```uniforms.myTexture = this._textureExample;```
+      this._uniforms['uTexturePreIntBRDF'] = this._textureExample;
     }
 
     // Handle keyboard and mouse inputs to translate and rotate camera.
@@ -209,7 +229,7 @@ class Application {
         );
         const LS_to_WS = this._uniforms["uModel.LS_to_WS"] as mat4;
         mat4.fromTranslation(LS_to_WS, WsSphereTranslation);
-        this._uniforms['uMaterial.roughness'] = c * 0.18 + 0.01;
+        this._uniforms['uMaterial.roughness'] = 0; //c * 0.18 + 0.01;
         this._uniforms['uMaterial.metalness'] = r * 0.23 + 0.01;
 
         // Draw the triangles
