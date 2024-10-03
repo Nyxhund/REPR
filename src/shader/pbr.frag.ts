@@ -11,8 +11,12 @@ in vec3 positionWS;
 struct Material
 {
     vec3 albedo;
+    float roughness;
+    float metalness;
 };
 uniform Material uMaterial;
+
+uniform sampler2D uTexture;
 
 struct CameraFrag
 {
@@ -83,7 +87,7 @@ float geometric(vec3 vue, vec3 light, float roughness)
 
 float roughness = 0.5;
 float f0 = 0.04;
-float metallic = 0.0;
+float metallic = 1.0;
 
 vec3 specularBRDF(vec3 p, vec3 w0, vec3 wi)
 {
@@ -92,9 +96,27 @@ vec3 specularBRDF(vec3 p, vec3 w0, vec3 wi)
     return vec3((normalDistribution(halfway, roughness) * geometric(w0, wi, roughness)) / (4.0 * dot(w0, vNormalWS) * dot(wi, vNormalWS)));
 }
 
-float fresnelShlick(vec3 vue, vec3 halfway, float f0)
+vec3 fresnelShlick(vec3 vue, vec3 halfway, vec3 f0)
 {
     return f0 + (1.0 - f0) * pow(1.0 - dot(vue, halfway), 5.0);
+}
+
+vec2 cartesianToPolar(vec3 cartesian) {
+    // Compute azimuthal angle, in [-PI, PI]
+    float phi = atan(cartesian.z, cartesian.x);
+
+    // Compute polar angle, in [-PI/2, PI/2]
+    float theta = asin(cartesian.y);
+
+    return vec2(phi, theta);
+}
+
+vec4 diffuseIBL(vec3 normal)
+{
+    vec2 polar = cartesianToPolar(normal);
+    polar.x = (polar.x + pi) / (2.0 * pi);
+    polar.y = (polar.y + pi / 2.0) / pi;
+    return texture(uTexture, polar);
 }
 
 void main()
@@ -104,26 +126,34 @@ void main()
     // vec3 albedo = sRGBToLinear(vec4(vNormalWS, 1.0)).rgb;
     // vec3 albedo = sRGBToLinear(vec4(vViewDirectionWS, 1.0)).rgb;
 
-    vec3 accu = vec3(0.0);
-    for (int i = 0; i < 2; i++)
-    {
-        // accu += diffuseBRDF(albedo) * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
+    // VERSION BRDF
+    // vec3 accu = vec3(0.0);
+    // for (int i = 0; i < 1; i++)
+    // {
+    //     // accu += diffuseBRDF(albedo) * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
+    //
+    //     vec3 vue = uCameraFrag.position - positionWS;
+    //     vec3 wi = uLights[i].positionWS - positionWS;
+    //     vec3 halfway = vue + wi;
+    //     halfway = normalize(halfway);
+    //
+    //     float ks = 0.5; // fresnelShlick(vue, halfway, f0);
+    //     vec3 spec = ks * specularBRDF(albedo, vue, wi);
+    //     spec = normalize(spec);
+    //
+    //     vec3 diffuse = (1.0 - ks) * diffuseBRDF(albedo);
+    //     diffuse = normalize(diffuse);
+    //     diffuse *= (1.0 - metallic) * albedo;
+    //
+    //     accu += (spec + diffuse) * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
+    // }
 
-        vec3 vue = uCameraFrag.position - positionWS;
-        vec3 wi = uLights[i].positionWS - positionWS;
-        vec3 halfway = vue + wi;
-        halfway = normalize(halfway);
+    vec3 vue = uCameraFrag.position - positionWS;
+    vue = normalize(vue);
 
-        float ks = 0.5; //fresnelShlick(vue, halfway, f0);
-        vec3 spec = ks * specularBRDF(albedo, vue, wi);
-        spec = normalize(spec);
-
-        vec3 diffuse = (1.0 - ks) * diffuseBRDF(albedo);
-        diffuse = normalize(diffuse);
-        diffuse *= (1.0 - metallic);
-
-        accu += (spec + diffuse) * albedo * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
-    }
+    vec3 ks = fresnelShlick(vue, vNormalWS, vec3(uMaterial.metalness));
+    vec3 kd = (1.0 - ks) * (1.0 - uMaterial.metalness);
+    vec3 accu = kd * albedo * diffuseIBL(vNormalWS).rgb;
 
     albedo = accu;
     // albedo = albedo / (albedo + vec3(1));
