@@ -12,9 +12,13 @@ import { UniformType } from './types';
 interface GUIProperties {
   albedo: number[];
   lightColor1: number[];
+  lightIntensity1: number;
   lightColor2: number[];
+  lightIntensity2: number;
   lightColor3: number[];
-  lightIntensity: number;
+  lightIntensity3: number;
+  lightColor4: number[];
+  lightIntensity4: number;
 }
 
 /**
@@ -30,7 +34,7 @@ class Application {
   private _textureExample: Texture2D<HTMLElement> | null;
   private _camera: Camera;
   private _guiProperties: GUIProperties; // Object updated with the properties from the GUI
-  private _lights : [PointLight, PointLight, PointLight];
+  private _lights : [PointLight, PointLight, PointLight, PointLight];
 
   constructor(canvas: HTMLCanvasElement) {
     this._context = new GLContext(canvas);
@@ -38,7 +42,7 @@ class Application {
     this._geometry = new SphereGeometry();
     this._shader = new PBRShader();
     this._textureExample = null;
-    this._lights = [new PointLight, new PointLight, new PointLight];
+    this._lights = [new PointLight, new PointLight, new PointLight, new PointLight];
     this._uniforms = {
       'uMaterial.albedo': vec3.create(),
       'uModel.LS_to_WS': mat4.create(),
@@ -51,25 +55,43 @@ class Application {
     this._guiProperties = {
       albedo: [255, 255, 255],
       lightColor1: [255, 255, 255],
+      lightIntensity1: 0.5,
       lightColor2: [255, 255, 255],
+      lightIntensity2: 0.5,
       lightColor3: [255, 255, 255],
-      lightIntensity: 0.5,
+      lightIntensity3: 0.5,
+      lightColor4: [255, 255, 255],
+      lightIntensity4: 0.5,
     };
     // Creates a GUI floating on the upper right side of the page.
     // You are free to do whatever you want with this GUI.
     // It's useful to have parameters you can dynamically change to see what happens.
     const gui = new GUI();
     gui.addColor(this._guiProperties, 'albedo');
-    gui.add(this._guiProperties, 'lightIntensity');
-    gui.addColor(this._guiProperties, 'lightColor1');
-    gui.addColor(this._guiProperties, 'lightColor2');
-    gui.addColor(this._guiProperties, 'lightColor3');
+
+    const folder1 = gui.addFolder("Light 1");
+    folder1.addColor(this._guiProperties, 'lightColor1');
+    folder1.add(this._guiProperties, 'lightIntensity1');
+
+    const folder2 = gui.addFolder("Light 2");
+    folder2.addColor(this._guiProperties, 'lightColor2');
+    folder2.add(this._guiProperties, 'lightIntensity2');
+
+    const folder3 = gui.addFolder("Light 3");
+    folder3.addColor(this._guiProperties, 'lightColor3');
+    folder3.add(this._guiProperties, 'lightIntensity3');
+
+    const folder4 = gui.addFolder("Light 4");
+    folder4.addColor(this._guiProperties, 'lightColor4');
+    folder4.add(this._guiProperties, 'lightIntensity4');
 
     this._lights[0].setPosition(8, 0, 9);
 
     this._lights[1].setPosition(-3, 0, 5);
 
     this._lights[2].setPosition(1, 0, 17);
+
+    this._lights[3].setPosition(1, 0, 17);
   }
 
   /**
@@ -126,13 +148,15 @@ class Application {
       props.albedo[1] / 255,
       props.albedo[2] / 255);
 
-    this._lights[0].setIntensity(props.lightIntensity);
-    this._lights[1].setIntensity(props.lightIntensity);
-    this._lights[2].setIntensity(props.lightIntensity);
+    this._lights[0].setIntensity(props.lightIntensity1);
+    this._lights[1].setIntensity(props.lightIntensity2);
+    this._lights[2].setIntensity(props.lightIntensity3);
+    this._lights[3].setIntensity(props.lightIntensity4);
 
     this._lights[0].setColorRGB(props.lightColor1[0], props.lightColor1[1], props.lightColor1[2]);
     this._lights[1].setColorRGB(props.lightColor2[0], props.lightColor2[1], props.lightColor2[2]);
     this._lights[2].setColorRGB(props.lightColor3[0], props.lightColor3[1], props.lightColor3[2]);
+    this._lights[3].setColorRGB(props.lightColor4[0], props.lightColor4[1], props.lightColor4[2]);
 
     // Set World-Space to Clip-Space transformation matrix (a.k.a view-projection).
     const aspect = this._context.gl.drawingBufferWidth / this._context.gl.drawingBufferHeight;
