@@ -119,12 +119,17 @@ vec2 cartesianToPolar(vec3 cartesian) {
     return vec2(phi, theta);
 }
 
+vec3 RGBMDecode(vec4 rgbm) {
+  return 6.0 * rgbm.rgb * rgbm.a;
+}
+
 vec4 diffuseIBL(vec3 normal)
 {
     vec2 polar = cartesianToPolar(normal);
     polar.x = (polar.x + pi) / (2.0 * pi);
     polar.y = (polar.y + pi / 2.0) / pi;
-    return texture(uTextureDiffuse, polar);
+    vec4 tmp = texture(uTextureDiffuse, polar);
+    return vec4(RGBMDecode(tmp), 1.0);
 }
 
 vec3 BRDF(vec3 albedo)
@@ -157,8 +162,11 @@ vec3 BRDF(vec3 albedo)
 vec2 getLevel(float x, vec2 polar)
 {
     vec2 levelX = polar;
-    levelX.x = (levelX.x + pi) / (pi * pow(2.0, 2.0 + x)) + (1.0 - 1.0 / pow(2.0, x));
-    levelX.y = (levelX.y + pi / 2.0) / (pi * pow(2.0, x));
+    levelX.x = (levelX.x + pi) / (pi * 2.0);
+    levelX.y = (levelX.y + pi / 2.0) / pi;
+
+    levelX.x = levelX.x * (1.0 / (pow(2.0, x)));
+    levelX.y = levelX.y * (1.0 / (pow(2.0, x + 1.0))) + (1.0 - 1.0 / pow(2.0, x));
 
     return levelX;
 }
@@ -166,13 +174,19 @@ vec2 getLevel(float x, vec2 polar)
 vec4 computeTexelFromRoughness(float roughness, vec3 reflected)
 {
     vec2 polar = cartesianToPolar(reflected);
+
     vec2 first = getLevel(floor(roughness * 6.0), polar);
     vec2 second = getLevel(ceil(roughness * 6.0), polar);
+
+    float level = floor(roughness * 6.0);
 
     vec4 texel1 = texture(uTextureSpecular, first);
     vec4 texel2 = texture(uTextureSpecular, second);
 
-    return mix(texel1, texel2, roughness * 6.0 - floor(roughness * 6.0));
+    vec4 texelConverted1 = vec4(RGBMDecode(texel1), 1.0);
+    vec4 texelConverted2 = vec4(RGBMDecode(texel2), 1.0);
+
+    return mix(texelConverted1, texelConverted2, roughness * 6.0 - floor(roughness * 6.0));
 }
 
 vec3 IBL(vec3 albedo)
@@ -186,15 +200,16 @@ vec3 IBL(vec3 albedo)
     vec3 diffuseBRDFEval  = kd * albedo * diffuseIBL(vNormalWS).rgb;
 
     // Specular
-    vec3 reflected = reflect(vNormalWS, vue);
+    vec3 reflected = -reflect(vue, vNormalWS);
 
     vec4 prefilteredSpec = computeTexelFromRoughness(uMaterial.roughness, reflected);
 
-    // vec4 brdf = texture(uTexturePreIntBRDF, vec2(uMaterial.roughness, dot(normalize(vNormalWS), vue)));
-    // brdf = sRGBToLinear(brdf);
+    vec4 brdf = texture(uTexturePreIntBRDF, vec2(uMaterial.roughness, dot(normalize(vNormalWS), vue)));
+    brdf = vec4(RGBMDecode(brdf), 1);
+    brdf = sRGBToLinear(brdf);
     vec3 specularBRDFEval = prefilteredSpec.rgb; // * (ks * brdf.r * brdf.g);
 
-    return specularBRDFEval; // + diffuse
+    return specularBRDFEval; // + diffuseBRDFEval;
 }
 
 void main()

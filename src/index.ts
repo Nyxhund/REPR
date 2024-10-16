@@ -229,7 +229,7 @@ class Application {
         );
         const LS_to_WS = this._uniforms["uModel.LS_to_WS"] as mat4;
         mat4.fromTranslation(LS_to_WS, WsSphereTranslation);
-        this._uniforms['uMaterial.roughness'] = 0; //c * 0.18 + 0.01;
+        this._uniforms['uMaterial.roughness'] = c * 0.18 + 0.01;
         this._uniforms['uMaterial.metalness'] = r * 0.23 + 0.01;
 
         // Draw the triangles
