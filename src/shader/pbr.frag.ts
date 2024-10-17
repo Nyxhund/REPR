@@ -100,7 +100,10 @@ vec3 specularBRDF(vec3 p, vec3 w0, vec3 wi)
     halfway = normalize(halfway);
     float roughness = uMaterial.roughness;
     float metallic = uMaterial.metalness;
-    return vec3((normalDistribution(halfway, roughness) * geometric(w0, wi, roughness)) / (4.0 * dot(w0, vNormalWS) * dot(wi, vNormalWS)));
+
+    float distrib = normalDistribution(halfway, roughness);
+    float geo = geometric(w0, wi, roughness);
+    return vec3((distrib * geo) / (4.0 * dot(w0, vNormalWS) * dot(wi, vNormalWS)));
 }
 
 vec3 fresnelShlick(vec3 vue, vec3 halfway, vec3 f0)
@@ -140,13 +143,14 @@ vec3 BRDF(vec3 albedo)
         // accu += diffuseBRDF(albedo) * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
 
         vec3 vue = uCameraFrag.position - positionWS;
+        vue = normalize(vue);
         vec3 wi = uLights[i].positionWS - positionWS;
+        wi = normalize(wi);
         vec3 halfway = vue + wi;
         halfway = normalize(halfway);
 
-        vec3 ks = vec3(0.5); //fresnelShlick(vue, halfway, vec3(uMaterial.metalness));
+        vec3 ks = fresnelShlick(vue, halfway, vec3(uMaterial.metalness));
         vec3 spec = ks * specularBRDF(albedo, vue, wi);
-        spec = normalize(spec);
 
         vec3 diffuse = (1.0 - ks) * diffuseBRDF(albedo);
         diffuse = normalize(diffuse);
