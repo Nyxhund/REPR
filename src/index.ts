@@ -64,11 +64,11 @@ class Application {
       Reinhard: false,
       ACES: true,
       albedo: [255, 255, 255],
-      lightColor1: [255, 255, 255],
+      lightColor1: [255, 0, 0],
       lightIntensity1: 0.5,
-      lightColor2: [255, 255, 255],
+      lightColor2: [0, 255, 0],
       lightIntensity2: 0.5,
-      lightColor3: [255, 255, 255],
+      lightColor3: [0, 0, 255],
       lightIntensity3: 0.5,
       lightColor4: [255, 255, 255],
       lightIntensity4: 0.5,
@@ -117,11 +117,11 @@ class Application {
 
     this._lights[0].setPosition(8, 0, 9);
 
-    this._lights[1].setPosition(-3, 0, 5);
+    this._lights[1].setPosition(0, 8, 9);
 
-    this._lights[2].setPosition(1, 0, 17);
+    this._lights[2].setPosition(-8, 0, 9);
 
-    this._lights[3].setPosition(1, 0, 17);
+    this._lights[3].setPosition(0, -8, 9);
   }
 
   /**

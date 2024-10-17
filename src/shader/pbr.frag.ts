@@ -32,7 +32,7 @@ struct Lights
     float intensity;
     vec3 positionWS;
 };
-uniform Lights uLights[3];
+uniform Lights uLights[4];
 
 struct Mode
 {
@@ -94,14 +94,12 @@ float geometric(vec3 vue, vec3 light, float roughness)
     return GGX(vNormalWS, vue, k) * GGX(vNormalWS, light, k);
 }
 
-float roughness = 0.5;
-float f0 = 0.04;
-float metallic = 1.0;
-
 vec3 specularBRDF(vec3 p, vec3 w0, vec3 wi)
 {
     vec3 halfway = wi + w0;
     halfway = normalize(halfway);
+    float roughness = uMaterial.roughness;
+    float metallic = uMaterial.metalness;
     return vec3((normalDistribution(halfway, roughness) * geometric(w0, wi, roughness)) / (4.0 * dot(w0, vNormalWS) * dot(wi, vNormalWS)));
 }
 
@@ -146,13 +144,13 @@ vec3 BRDF(vec3 albedo)
         vec3 halfway = vue + wi;
         halfway = normalize(halfway);
 
-        float ks = 0.5; // fresnelShlick(vue, halfway, f0);
+        vec3 ks = vec3(0.5); //fresnelShlick(vue, halfway, vec3(uMaterial.metalness));
         vec3 spec = ks * specularBRDF(albedo, vue, wi);
         spec = normalize(spec);
 
         vec3 diffuse = (1.0 - ks) * diffuseBRDF(albedo);
         diffuse = normalize(diffuse);
-        diffuse *= (1.0 - metallic) * albedo;
+        diffuse *= (1.0 - uMaterial.metalness) * albedo;
 
         accu += (spec + diffuse) * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
     }
