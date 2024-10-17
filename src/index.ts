@@ -12,6 +12,8 @@ import { UniformType } from './types';
 interface GUIProperties {
     BRDF: boolean;
     IBL: boolean;
+    Reinhard: boolean;
+    ACES: boolean;
     albedo: number[];
     lightColor1: number[];
     lightIntensity1: number;
@@ -59,6 +61,8 @@ class Application {
     this._guiProperties = {
       BRDF: false,
       IBL: true,
+      Reinhard: false,
+      ACES: true,
       albedo: [255, 255, 255],
       lightColor1: [255, 255, 255],
       lightIntensity1: 0.5,
@@ -69,9 +73,16 @@ class Application {
       lightColor4: [255, 255, 255],
       lightIntensity4: 0.5,
     };
+
     let setChecked = (prop : string) => {
         this._guiProperties['BRDF'] = false;
         this._guiProperties['IBL'] = false;
+        this._guiProperties[prop] = true;
+    }
+
+    let setToneChecked = (prop : string) => {
+        this._guiProperties['Reinhard'] = false;
+        this._guiProperties['ACES'] = false;
         this._guiProperties[prop] = true;
     }
 
@@ -81,6 +92,10 @@ class Application {
     const gui = new GUI();
     gui.add(this._guiProperties, 'BRDF').listen().onChange(() => setChecked('BRDF'));
     gui.add(this._guiProperties, 'IBL').listen().onChange(() => setChecked('IBL'));
+
+    const folderTone = gui.addFolder("Tone mapping");
+    folderTone.add(this._guiProperties, 'Reinhard').listen().onChange(() => setToneChecked('Reinhard'));
+    folderTone.add(this._guiProperties, 'ACES').listen().onChange(() => setToneChecked('ACES'));
 
     gui.addColor(this._guiProperties, 'albedo');
 
@@ -213,6 +228,7 @@ class Application {
 
     // Set Mode
     this._uniforms['uMode.mode'] = props.IBL ? 1 : 0;
+    this._uniforms['uMode.tone'] = props.Reinhard ? 1 : 0;
 
     // Draw the 5x5 grid of spheres
     const rows = 5;

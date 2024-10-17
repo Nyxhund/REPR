@@ -37,6 +37,7 @@ uniform Lights uLights[3];
 struct Mode
 {
     int mode;
+    int tone;
 };
 uniform Mode uMode;
 
@@ -136,7 +137,7 @@ vec3 BRDF(vec3 albedo)
 {
     // VERSION BRDF
     vec3 accu = vec3(0.0);
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 4; i++)
     {
         // accu += diffuseBRDF(albedo) * (uLights[i].color * calculatePointLight(uLights[i].intensity, vNormalWS, uLights[i].positionWS - positionWS));
 
@@ -224,8 +225,10 @@ void main()
     else
         albedo = IBL(albedo);
 
-    // albedo = albedo / (albedo + vec3(1));
-    albedo = ACESFilm(albedo);
+    if (uMode.tone == 0)
+        albedo = ACESFilm(albedo);
+    else
+        albedo = albedo / (albedo + vec3(1));
 
     // **DO NOT** forget to apply gamma correction as last step.
     outFragColor.rgba = LinearTosRGB(vec4(albedo, 1.0));
