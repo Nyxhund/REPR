@@ -178,8 +178,6 @@ vec4 computeTexelFromRoughness(float roughness, vec3 reflected)
     vec2 first = getLevel(floor(roughness * 6.0), polar);
     vec2 second = getLevel(ceil(roughness * 6.0), polar);
 
-    float level = floor(roughness * 6.0);
-
     vec4 texel1 = texture(uTextureSpecular, first);
     vec4 texel2 = texture(uTextureSpecular, second);
 
@@ -204,12 +202,14 @@ vec3 IBL(vec3 albedo)
 
     vec4 prefilteredSpec = computeTexelFromRoughness(uMaterial.roughness, reflected);
 
-    vec4 brdf = texture(uTexturePreIntBRDF, vec2(uMaterial.roughness, dot(normalize(vNormalWS), vue)));
-    brdf = vec4(RGBMDecode(brdf), 1);
-    brdf = sRGBToLinear(brdf);
-    vec3 specularBRDFEval = prefilteredSpec.rgb; // * (ks * brdf.r * brdf.g);
+    float u = max(0.0, dot(vue, vNormalWS));
+    vec2 uv = vec2(u, uMaterial.roughness);
 
-    return specularBRDFEval; // + diffuseBRDFEval;
+    vec4 brdf = texture(uTexturePreIntBRDF, uv);
+    brdf = sRGBToLinear(brdf);
+    vec3 specularBRDFEval = prefilteredSpec.rgb * (ks * brdf.r + brdf.g);
+
+    return specularBRDFEval + diffuseBRDFEval;
 }
 
 void main()
