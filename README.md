@@ -3,6 +3,14 @@ The goal of this project is to implement a PBR renderer. You are asked to implem
 * A Lambertian diffuse BRDF
 * A Cook-Torrance GGX specular BRDF
 
+## Checklist
+- [x] Direct Lighting
+- [x] Tone Mapping
+- [x] Diffuse BRDF
+- [ ] Specular BRDF
+- [x] IBL Diffuse
+- [x] IBL Specular
+- [ ] IBL Diffuse Generation
 
 ## Grading
 * Group size: **1**
